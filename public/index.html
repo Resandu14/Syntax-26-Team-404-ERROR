@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CleanSpot turns environmental reports into verified cleanup and reuse.">
+    <title>CleanSpot | Report. Clean. Reward. Reuse.</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body data-page="landing">
+    <header id="topbar"></header>
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">CLEANSPOT</p>
+          <h1>Turn waste reports into cleaner communities.</h1>
+          <p class="hero-text">Report public waste, follow its cleanup, and earn rewards only when the work is verified.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="/auth.html?mode=register">Report Waste <i data-lucide="arrow-up-right"></i></a>
+            <a class="button button-secondary" href="/marketplace.html">Explore Marketplace <i data-lucide="shopping-bag"></i></a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <img src="https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&w=1400&q=85" alt="Volunteers cleaning litter from a public place">
+          <div class="impact-stamp"><i data-lucide="shield-check"></i><span>Verified cleanup<br>not empty promises</span></div>
+        </div>
+      </section>
+
+      <section class="landing-section workflow-section">
+        <div class="section-intro">
+          <p class="eyebrow">One accountable loop</p>
+          <h2>Every report has somewhere to go.</h2>
+          <p>CleanSpot makes ownership visible from the first photo to the proof of cleanup.</p>
+        </div>
+        <ol class="workflow">
+          <li><span class="workflow-icon"><i data-lucide="camera"></i></span><strong>Report</strong><small>Share a photo and location.</small></li>
+          <li><span class="workflow-icon"><i data-lucide="sparkles"></i></span><strong>AI analyze</strong><small>Estimate the waste and urgency.</small></li>
+          <li><span class="workflow-icon"><i data-lucide="clipboard-check"></i></span><strong>Cleanup</strong><small>A team accepts the issue.</small></li>
+          <li><span class="workflow-icon"><i data-lucide="badge-check"></i></span><strong>Verify</strong><small>Proof closes the report.</small></li>
+          <li><span class="workflow-icon"><i data-lucide="coins"></i></span><strong>Reward</strong><small>Points arrive after verification.</small></li>
+          <li><span class="workflow-icon"><i data-lucide="repeat-2"></i></span><strong>Reuse</strong><small>Materials find a second life.</small></li>
+        </ol>
+      </section>
+
+      <section class="landing-section feature-grid">
+        <article class="feature-card feature-card-wide">
+          <div>
+            <i data-lucide="scan-search"></i>
+            <h2>AI-assisted, human-reviewed.</h2>
+            <p>GPT-4 estimates waste type, urgency, scale, and next action. Cleanup teams always see the original evidence before deciding.</p>
+          </div>
+          <img src="https://images.unsplash.com/photo-1618477388954-7852f32655ec?auto=format&fit=crop&w=1000&q=85" alt="Sorted recyclable waste">
+        </article>
+        <article class="feature-card feature-card-tint">
+          <i data-lucide="map-pin"></i>
+          <h3>Smart reporting</h3>
+          <p>Location-aware duplicate checks help teams focus on the issues that really need action.</p>
+        </article>
+        <article class="feature-card">
+          <i data-lucide="shopping-basket"></i>
+          <h3>Reuse marketplace</h3>
+          <p>Sell or find useful recyclable materials, from single items to bulk lots.</p>
+        </article>
+      </section>
+
+      <section class="landing-section callout">
+        <div>
+          <p class="eyebrow">Make the first move</p>
+          <h2>Cleaner places begin with a clear route to action.</h2>
+        </div>
+        <a class="button button-primary" href="/auth.html?mode=register">Join CleanSpot <i data-lucide="arrow-up-right"></i></a>
+      </section>
+    </main>
+    <footer class="site-footer"><span>CLEANSPOT</span><span>Report. Clean. Reward. Reuse.</span></footer>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
