@@ -13,16 +13,26 @@ const demoRewards = [
   { id: 'plant', name: 'Plant', description: 'An indoor plant in a compostable starter pot.', image_url: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=80', points_cost: 750, stock: 25 },
   { id: 'bottle', name: 'Reusable Bottle', description: 'A stainless steel alternative to single-use plastic.', image_url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=80', points_cost: 1000, stock: 20 },
   { id: 'certificate', name: 'Eco Certificate', description: 'Recognition for verified community impact.', image_url: 'https://images.unsplash.com/photo-1524032175535-863d8a2200df?auto=format&fit=crop&w=900&q=80', points_cost: 1500, stock: 100 },
+  { id: 'cutlery', name: 'Bamboo Cutlery Set', description: 'A portable alternative to disposable utensils.', image_url: 'https://images.unsplash.com/photo-1584346133934-a3afd2a33c4c?auto=format&fit=crop&w=900&q=80', points_cost: 350, stock: 35 },
+  { id: 'compost-kit', name: 'Compost Starter Kit', description: 'A simple kit for turning kitchen scraps into compost.', image_url: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80', points_cost: 650, stock: 18 },
 ];
 const demoListings = [
   ['cardboard', '100 clean cardboard boxes', 'Cardboard', '100 boxes', 'bulk', 2500, 'Colombo 05', 'https://images.unsplash.com/photo-1607166452427-7e4477079cb9?auto=format&fit=crop&w=900&q=80'],
   ['chairs', 'Reusable plastic chairs', 'Furniture', '12 chairs', 'bulk', 7200, 'Nugegoda', 'https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=900&q=80'],
   ['glass', 'Glass storage containers', 'Glass', '8 containers', 'individual', 350, 'Maharagama', 'https://images.unsplash.com/photo-1523293836415-599cbbe0d9e9?auto=format&fit=crop&w=900&q=80'],
   ['metal', 'Sorted scrap metal', 'Metal', '30 kg', 'bulk', 4800, 'Dehiwala', 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=900&q=80'],
+  ['ewaste', 'Used electronic components', 'Electronics', '20 items', 'bulk', 1500, 'Kottawa', 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?auto=format&fit=crop&w=900&q=80'],
+  ['crates', 'Reusable produce crates', 'Reusable Items', '15 crates', 'bulk', 3000, 'Piliyandala', 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=900&q=80'],
 ].map(([id, title, category, quantity, listing_type, price, location, image]) => ({ id, title, category, quantity, listing_type, price, location, image_urls: [image], description: 'Ready for collection and reuse or responsible recycling.', condition: 'Good condition', contact_info: 'demo@cleanspot.lk', profiles: { name: 'CleanSpot Community' }, active: true }));
 
 function demoStore() {
-  try { return JSON.parse(localStorage.getItem(DEMO_KEY)) || createDemoStore(); } catch { return createDemoStore(); }
+  const base = createDemoStore();
+  try {
+    const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    if (!saved) return base;
+    const mergeSeeds = (current = [], seeds) => [...current, ...seeds.filter((seed) => !current.some((item) => item.id === seed.id))];
+    return { ...base, ...saved, listings: mergeSeeds(saved.listings, base.listings), rewards: mergeSeeds(saved.rewards, base.rewards), claims: saved.claims || [], reports: saved.reports || [] };
+  } catch { return base; }
 }
 
 function createDemoStore() {
@@ -35,7 +45,19 @@ function fileAsDataUrl(file) {
   return new Promise((resolve) => {
     if (!(file instanceof File) || !file.size) return resolve('');
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const scale = Math.min(1, 900 / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      image.onerror = () => resolve('');
+      image.src = reader.result;
+    };
     reader.onerror = () => resolve('');
     reader.readAsDataURL(file);
   });
@@ -46,6 +68,27 @@ async function demoApi(path, options = {}) {
   if (path === '/api/me') return { profile: store.profile, company: null };
   if (path === '/api/dashboard') return { profile: store.profile, stats: { points: store.profile.points, reports: store.reports.length, cleaned: store.reports.filter((item) => item.status === 'cleaned').length, listings: store.listings.length }, reports: store.reports.slice(0, 5), activity: [], claims: store.claims };
   if (path === '/api/reports/mine') return { reports: store.reports };
+  if (path === '/api/reports' && options.method === 'POST') {
+    const form = options.body;
+    const image = await fileAsDataUrl(form.get('photos'));
+    const report = {
+      id: crypto.randomUUID(),
+      user_id: store.profile.user_id,
+      photo_url: image || 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=1000&q=80',
+      photo_urls: image ? [image] : [],
+      description: String(form.get('description') || ''),
+      location: String(form.get('location') || ''),
+      latitude: form.get('latitude') ? Number(form.get('latitude')) : null,
+      longitude: form.get('longitude') ? Number(form.get('longitude')) : null,
+      waste_category: String(form.get('wasteCategory') || 'Mixed Waste'),
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      reporter: { name: store.profile.name },
+    };
+    store.reports.unshift(report);
+    saveDemo(store);
+    return { report, duplicate: false };
+  }
   if (path === '/api/rewards') return { rewards: store.rewards };
   if (path === '/api/rewards/claims') return { claims: store.claims };
   if (/^\/api\/rewards\/[^/]+\/claim$/.test(path) && options.method === 'POST') {
@@ -161,7 +204,7 @@ function renderHeader() {
   const adminLinks = [['dashboard.html', 'Overview'], ['marketplace.html', 'Marketplace']];
   const links = isCompany ? companyLinks : isAdmin ? adminLinks : citizenLinks;
   header.innerHTML = `<div class="site-header">
-    <a class="wordmark" href="/index.html">CLEAN<span>SPOT</span></a>
+    <a class="wordmark brand-identity" href="/index.html" aria-label="CleanSpot home"><span class="brand-symbol"><img src="/assets/cleanspot-logo.png" alt=""></span><strong>CleanSpot</strong></a>
     <nav class="nav-links" id="navLinks">
       ${signedIn ? links.map(([file, label]) => `<a class="nav-link${active(file)}" href="/${file}">${label}</a>`).join('') : '<a class="nav-link" href="/marketplace.html">Marketplace</a>'}
     </nav>
@@ -262,7 +305,7 @@ function reportCard(report, options = {}) {
     <div class="report-card-body">
       <div class="report-card-top"><div><h2>${escapeHtml(report.location)}</h2><p>${escapeHtml(report.description)}</p></div>${statusBadge(report.status)}</div>
       <div class="report-meta"><span><i data-lucide="calendar-days"></i>${formatDate(report.created_at)}</span><span><i data-lucide="map-pin"></i>${report.latitude != null ? 'GPS captured' : 'Landmark entered'}</span>${options.showCitizen && report.reporter?.name ? `<span><i data-lucide="user"></i>${escapeHtml(report.reporter.name)}</span>` : ''}</div>
-      ${aiMarkup(analysis, true)}${duplicateText}${declineText}${mapLink ? `<div class="report-actions">${mapLink}</div>` : ''}${options.actions || ''}
+      ${state.demo ? '' : aiMarkup(analysis, true)}${duplicateText}${declineText}${mapLink ? `<div class="report-actions">${mapLink}</div>` : ''}${options.actions || ''}
     </div>
   </article>`;
 }
@@ -363,7 +406,7 @@ async function renderDashboard() {
       </section>
       <section class="dashboard-layout">
         <div class="panel"><div class="panel-heading"><h2>Recent reports</h2><a class="text-link" href="/reports.html">View all <i data-lucide="arrow-right"></i></a></div>
-          <div class="report-list">${reports.length ? reports.map((report) => `<a class="compact-report" href="/reports.html"><div><strong>${escapeHtml(report.location)}</strong><small>${escapeHtml(analysisFor(report)?.waste_type || report.waste_category || 'AI assessment pending')}</small></div>${statusBadge(report.status)}</a>`).join('') : '<div class="empty-state"><i data-lucide="camera"></i><div><h2>No reports yet</h2><p>Spot an issue that needs more than one pair of hands.</p><a class="button button-primary button-small" href="/report.html">Report waste</a></div></div>'}</div>
+          <div class="report-list">${reports.length ? reports.map((report) => `<a class="compact-report" href="/reports.html"><div><strong>${escapeHtml(report.location)}</strong><small>${escapeHtml(report.waste_category || 'Awaiting cleanup review')}</small></div>${statusBadge(report.status)}</a>`).join('') : '<div class="empty-state"><i data-lucide="camera"></i><div><h2>No reports yet</h2><p>Spot an issue that needs more than one pair of hands.</p><a class="button button-primary button-small" href="/report.html">Report waste</a></div></div>'}</div>
         </div>
         <div class="panel"><div class="panel-heading"><h2>Recent activity</h2></div><div class="activity-list">${activity.length ? activity.map((item) => `<div class="activity-item"><i data-lucide="coins"></i><div><strong>${item.points > 0 ? `+${item.points}` : item.points} points</strong><small>${item.type === 'cleanup_reward' ? 'Verified cleanup reward' : 'Reward store claim'} - ${formatDate(item.created_at)}</small></div></div>`).join('') : '<p class="muted">Verified rewards will appear here after a cleanup is completed.</p>'}</div><div class="impact-note"><strong>Rewards progress</strong><br>${claims.length ? `${claims.length} reward claim${claims.length > 1 ? 's' : ''} in your history.` : 'Complete verified reports to unlock environmental rewards.'}</div></div>
       </section>`;
@@ -413,7 +456,7 @@ async function setupReportForm() {
     refreshIcons();
     try {
       const data = await api('/api/reports', { method: 'POST', body: new FormData(form) });
-      result.innerHTML = `<article class="analysis-result"><p class="eyebrow">${data.duplicate ? 'Report declined as duplicate' : 'Report created'}</p><h2>${data.duplicate ? 'A nearby active report already covers this issue.' : 'Your report is ready for cleanup teams.'}</h2><p>${data.duplicate ? 'The existing active report remains visible to teams, so no work is duplicated.' : 'This is an AI-generated assessment. A cleanup team will inspect the original photo before acting.'}</p>${aiMarkup(data.analysis)}${data.analysisNote ? `<p class="muted">${escapeHtml(data.analysisNote)}</p>` : ''}<div class="report-actions"><a class="button button-primary button-small" href="/reports.html">View my reports <i data-lucide="arrow-right"></i></a><button class="button button-secondary button-small" type="button" id="newReportButton">Report another place</button></div></article>`;
+      result.innerHTML = `<article class="analysis-result"><p class="eyebrow">${data.duplicate ? 'Report declined as duplicate' : 'Report created'}</p><h2>${data.duplicate ? 'A nearby active report already covers this issue.' : 'Your report is ready for cleanup teams.'}</h2><p>${data.duplicate ? 'The existing active report remains visible to teams, so no work is duplicated.' : 'The photo, location, category, and reporter details have been saved for cleanup review.'}</p><div class="report-actions"><a class="button button-primary button-small" href="/reports.html">View my reports <i data-lucide="arrow-right"></i></a><button class="button button-secondary button-small" type="button" id="newReportButton">Report another place</button></div></article>`;
       form.reset();
       $('#reportPreview').innerHTML = '';
       $('#locationStatus').textContent = 'Add a landmark, or capture your GPS coordinates.';
@@ -423,7 +466,7 @@ async function setupReportForm() {
       setMessage(message, error.message);
     } finally {
       submit.disabled = false;
-      submit.innerHTML = 'Analyze and submit <i data-lucide="send"></i>';
+      submit.innerHTML = 'Submit report <i data-lucide="send"></i>';
       refreshIcons();
     }
   });

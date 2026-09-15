@@ -19,6 +19,19 @@
 * { box-sizing: border-box; }
 html { min-width: 320px; }
 body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+body[data-page="dashboard"] {
+  background-attachment: fixed;
+  background-color: var(--canvas);
+  background-image: linear-gradient(180deg, rgba(244, 247, 243, 0.64) 0%, rgba(244, 247, 243, 0.86) 43%, rgba(244, 247, 243, 0.97) 100%), url('/assets/dashboard-clean-lanka.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  min-height: 100dvh;
+}
+body[data-page="dashboard"] .page-heading { min-height: 180px; padding: 2rem 0; }
+body[data-page="dashboard"] .page-heading h1 { text-shadow: 0 2px 18px rgba(255, 255, 255, 0.9); }
+body[data-page="dashboard"] .stat-card,
+body[data-page="dashboard"] .panel { backdrop-filter: blur(12px); background: color-mix(in srgb, var(--surface) 94%, transparent); }
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
@@ -35,6 +48,12 @@ h3 { font-size: 1.05rem; }
 .eyebrow { color: var(--brand); font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.62rem; }
 .wordmark { color: var(--ink); display: inline-block; font-size: 1.06rem; font-weight: 900; letter-spacing: 0.075em; }
 .wordmark span { color: var(--brand); }
+.brand-identity { align-items: center; display: inline-flex; gap: 0.55rem; letter-spacing: 0; }
+.brand-identity strong { font-size: 1.08rem; letter-spacing: 0; }
+.brand-symbol { background: #000; border-radius: 6px; display: block; height: 42px; overflow: hidden; position: relative; width: 42px; }
+.brand-symbol img { height: 82px; left: -20px; max-width: none; position: absolute; top: -7px; width: 82px; }
+.auth-logo { background: #000; border-radius: var(--radius); box-shadow: var(--shadow); height: 174px; overflow: hidden; padding: 0 !important; width: 174px; }
+.auth-logo img { height: 100%; object-fit: contain; width: 100%; }
 
 .site-header { align-items: center; backdrop-filter: blur(10px); background: color-mix(in srgb, var(--canvas) 88%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 76%, transparent); display: flex; height: 70px; justify-content: space-between; padding: 0 max(1.25rem, calc((100vw - 1240px) / 2)); position: sticky; top: 0; z-index: 20; }
 .nav-links, .nav-actions { align-items: center; display: flex; gap: 0.3rem; }
@@ -252,6 +271,76 @@ input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shad
 .toast.error { background: var(--danger); }
 @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+/* Motion system: quick enough for repeated dashboard use, visible enough for a live demo. */
+.site-header { animation: header-in 420ms cubic-bezier(.22, 1, .36, 1) both; }
+.app-main > *, .auth-panel, .hero-copy, .hero-visual, .landing-section > * {
+  animation: content-in 480ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.app-main > :nth-child(2), .landing-section > :nth-child(2) { animation-delay: 70ms; }
+.app-main > :nth-child(3), .landing-section > :nth-child(3) { animation-delay: 130ms; }
+.hero-visual { animation-delay: 110ms; }
+
+.stat-card, .reward-card, .listing-card, .report-card, .feature-card, .workflow li {
+  animation: card-in 440ms cubic-bezier(.22, 1, .36, 1) both;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+.stat-card:nth-child(2), .reward-card:nth-child(2), .listing-card:nth-child(2), .workflow li:nth-child(2) { animation-delay: 55ms; }
+.stat-card:nth-child(3), .reward-card:nth-child(3), .listing-card:nth-child(3), .workflow li:nth-child(3) { animation-delay: 110ms; }
+.stat-card:nth-child(4), .reward-card:nth-child(4), .listing-card:nth-child(4), .workflow li:nth-child(4) { animation-delay: 165ms; }
+.reward-card:nth-child(n+5), .listing-card:nth-child(n+5), .workflow li:nth-child(n+5) { animation-delay: 210ms; }
+.stat-card:hover, .reward-card:hover, .listing-card:hover, .report-card:hover, .feature-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 42%, var(--line));
+  box-shadow: 0 14px 30px rgba(25, 57, 39, 0.1);
+  transform: translateY(-3px);
+}
+
+.reward-card img, .listing-card img, .report-card > img, .feature-card-wide img, .hero-visual > img {
+  transition: transform 420ms cubic-bezier(.22, 1, .36, 1), filter 300ms ease;
+}
+.reward-card:hover img, .listing-card:hover img, .report-card:hover > img, .feature-card-wide:hover img { transform: scale(1.025); }
+.button:hover { transform: translateY(-2px); }
+.button:hover svg, .text-link:hover svg { transform: translateX(3px); }
+.button svg, .text-link svg, .icon-button svg { transition: transform 180ms ease; }
+.icon-button:hover svg { transform: rotate(8deg) scale(1.08); }
+.nav-link { position: relative; transition: background 180ms ease, color 180ms ease, transform 180ms ease; }
+.nav-link:hover { transform: translateY(-1px); }
+input, textarea, select, .upload-area { transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+.upload-area:hover { background: color-mix(in srgb, var(--brand-pale) 34%, var(--surface)); border-color: var(--brand); }
+.points-total svg { animation: coin-breathe 2.6s ease-in-out infinite; }
+.status-badge { animation: badge-in 300ms cubic-bezier(.22, 1, .36, 1) both; }
+.compact-report, .activity-item, .claim-item { transition: background 180ms ease, transform 180ms ease; }
+.compact-report:hover, .activity-item:hover, .claim-item:hover { background: var(--surface-muted); transform: translateX(3px); }
+.dialog[open] { animation: dialog-in 240ms cubic-bezier(.22, 1, .36, 1) both; }
+.dialog[open]::backdrop { animation: backdrop-in 200ms ease both; }
+.lucide-loader-circle { animation: spin 900ms linear infinite; }
+
+@keyframes header-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes content-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(12px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes coin-breathe {
+  0%, 100% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(8deg) scale(1.08); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media (prefers-color-scheme: dark) {
   :root { --canvas: #121a15; --surface: #1a251e; --surface-muted: #23332a; --ink: #edf4ee; --muted: #b5c3b9; --line: #314537; --brand: #48a77d; --brand-strong: #86d4ab; --brand-pale: #1c4230; --gold: #e2a34c; --danger: #e58075; --shadow: 0 18px 38px rgba(0, 0, 0, 0.28); }
   .site-header { background: color-mix(in srgb, var(--canvas) 88%, transparent); }
@@ -261,6 +350,10 @@ input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shad
   .status-accepted, .status-assigned { background: #1c3b4d; color: #a3d5ef; }
   .status-cleaning { background: #382b4f; color: #ccb7ef; }
   .status-declined { background: #4c2928; color: #f3aaa4; }
+  body[data-page="dashboard"] {
+    background-image: linear-gradient(180deg, rgba(18, 26, 21, 0.64) 0%, rgba(18, 26, 21, 0.88) 46%, rgba(18, 26, 21, 0.98) 100%), url('/assets/dashboard-clean-lanka.png');
+  }
+  body[data-page="dashboard"] .page-heading h1 { text-shadow: 0 2px 18px rgba(0, 0, 0, 0.75); }
 }
 
 @media (max-width: 920px) {
@@ -284,6 +377,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shad
   .nav-link { width: 100%; }
   .nav-actions .button { display: none; }
   .mobile-nav-toggle { display: inline-flex; }
+  .brand-symbol { height: 38px; width: 38px; }
+  .brand-symbol img { height: 74px; left: -18px; top: -6px; width: 74px; }
   .hero { gap: 2rem; padding-top: 3rem; }
   .hero-visual, .hero-visual > img { min-height: 300px; }
   .impact-stamp { bottom: 0.75rem; left: 0.75rem; }
@@ -305,6 +400,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shad
   .marketplace-toolbar { grid-template-columns: 1fr; }
   .marketplace-toolbar .button { grid-column: auto; }
   .marketplace-grid { grid-template-columns: 1fr; }
+  body[data-page="dashboard"] { background-attachment: scroll; background-position: 58% center; }
+  body[data-page="dashboard"] .page-heading { min-height: 210px; }
 }
 
 @media (max-width: 430px) {
