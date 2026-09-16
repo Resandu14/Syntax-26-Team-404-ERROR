@@ -15,32 +15,6 @@ const port = Number(process.env.PORT || 3000);
 
 const statuses = ['submitted', 'pending', 'accepted', 'assigned', 'cleaning', 'cleaned', 'declined'];
 const activeStatuses = ['submitted', 'pending', 'accepted', 'assigned', 'cleaning'];
-const starterMarketplaceListings = [
-  {
-    title: '100 clean cardboard boxes',
-    description: 'Flattened moving boxes ready for collection and reuse by a shop, school, or recycler.',
-    category: 'Cardboard', quantity: '100 boxes', listing_type: 'bulk', condition: 'Clean and reusable', price: 2500, location: 'Colombo 05',
-    image_urls: ['https://images.unsplash.com/photo-1607166452427-7e4477079cb9?auto=format&fit=crop&w=1200&q=80'],
-  },
-  {
-    title: 'Reusable plastic chairs',
-    description: 'A set of sturdy plastic chairs suitable for events, classrooms, or community spaces.',
-    category: 'Furniture', quantity: '12 chairs', listing_type: 'bulk', condition: 'Used, good condition', price: 7200, location: 'Nugegoda',
-    image_urls: ['https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=1200&q=80'],
-  },
-  {
-    title: 'Glass storage containers',
-    description: 'Washed glass containers with lids, ready for pantry storage or creative reuse.',
-    category: 'Glass', quantity: '8 containers', listing_type: 'individual', condition: 'Clean, lightly used', price: 350, location: 'Maharagama',
-    image_urls: ['https://images.unsplash.com/photo-1523293836415-599cbbe0d9e9?auto=format&fit=crop&w=1200&q=80'],
-  },
-  {
-    title: 'Sorted scrap metal',
-    description: 'Mixed aluminium and steel offcuts sorted for recycling and available as one lot.',
-    category: 'Metal', quantity: 'Approx. 30 kg', listing_type: 'bulk', condition: 'Sorted for recycling', price: 4800, location: 'Dehiwala',
-    image_urls: ['https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=1200&q=80'],
-  },
-];
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 6 * 1024 * 1024, files: 5 },
@@ -204,24 +178,6 @@ app.post('/api/onboarding', requireUserOnly, async (request, response, next) => 
         service_area: payload.serviceArea || 'Sri Lanka',
       }, { onConflict: 'profile_id' });
       if (companyError) throw companyError;
-    }
-
-    if (payload.role === 'citizen') {
-      const { data: existingListings, error: listingReadError } = await supabaseAdmin
-        .from('marketplace_listings')
-        .select('id')
-        .limit(1);
-      if (listingReadError) throw listingReadError;
-      if (!existingListings?.length) {
-        const { error: seedError } = await supabaseAdmin.from('marketplace_listings').insert(
-          starterMarketplaceListings.map((listing) => ({
-            ...listing,
-            seller_id: profile.id,
-            contact_info: request.user.email || 'Contact through CleanSpot',
-          })),
-        );
-        if (seedError) throw seedError;
-      }
     }
 
     response.status(201).json({ profile });

@@ -207,7 +207,7 @@ select * from (values
   ('Eco Bag', 'A durable reusable shopping bag for everyday essentials.', 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80', 500, 40),
   ('Plant', 'A small indoor plant with a compostable starter pot.', 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=80', 750, 25),
   ('Reusable Bottle', 'A stainless steel bottle to replace single-use plastics.', 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=80', 1000, 20),
-  ('Eco Certificate', 'A digital CleanSpot recognition certificate for verified community impact.', 'https://images.unsplash.com/photo-1524032175535-863d8a2200df?auto=format&fit=crop&w=900&q=80', 1500, 100)
+  ('Eco Certificate', 'A digital CleanSpot recognition certificate for verified community impact.', '/assets/eco-certificate.png', 1500, 100)
 ) as seed(name, description, image_url, points_cost, stock)
 where not exists (select 1 from public.rewards);
 

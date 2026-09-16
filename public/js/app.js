@@ -8,11 +8,22 @@ const state = {
 };
 
 const DEMO_KEY = 'cleanspot_presentation_demo';
+
+function setFavicon() {
+  let favicon = document.querySelector('link[rel="icon"]');
+  if (!favicon) {
+    favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    document.head.appendChild(favicon);
+  }
+  favicon.type = 'image/png';
+  favicon.href = '/assets/cleanspot-icon.png';
+}
 const demoRewards = [
   { id: 'eco-bag', name: 'Eco Bag', description: 'A durable reusable shopping bag.', image_url: 'https://images.unsplash.com/photo-1597484662317-9bd7bdda2907?auto=format&fit=crop&w=900&q=80', points_cost: 500, stock: 40 },
   { id: 'plant', name: 'Plant', description: 'An indoor plant in a compostable starter pot.', image_url: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=80', points_cost: 750, stock: 25 },
   { id: 'bottle', name: 'Reusable Bottle', description: 'A stainless steel alternative to single-use plastic.', image_url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=80', points_cost: 1000, stock: 20 },
-  { id: 'certificate', name: 'Eco Certificate', description: 'Recognition for verified community impact.', image_url: 'https://images.unsplash.com/photo-1524032175535-863d8a2200df?auto=format&fit=crop&w=900&q=80', points_cost: 1500, stock: 100 },
+  { id: 'certificate', name: 'Eco Certificate', description: 'Recognition for verified community impact.', image_url: '/assets/eco-certificate.png', points_cost: 1500, stock: 100 },
   { id: 'cutlery', name: 'Bamboo Cutlery Set', description: 'A portable alternative to disposable utensils.', image_url: 'https://images.unsplash.com/photo-1584346133934-a3afd2a33c4c?auto=format&fit=crop&w=900&q=80', points_cost: 350, stock: 35 },
   { id: 'compost-kit', name: 'Compost Starter Kit', description: 'A simple kit for turning kitchen scraps into compost.', image_url: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80', points_cost: 650, stock: 18 },
 ];
@@ -23,7 +34,7 @@ const demoListings = [
   ['metal', 'Sorted scrap metal', 'Metal', '30 kg', 'bulk', 4800, 'Dehiwala', 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=900&q=80'],
   ['ewaste', 'Used electronic components', 'Electronics', '20 items', 'bulk', 1500, 'Kottawa', 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?auto=format&fit=crop&w=900&q=80'],
   ['crates', 'Reusable produce crates', 'Reusable Items', '15 crates', 'bulk', 3000, 'Piliyandala', 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=900&q=80'],
-].map(([id, title, category, quantity, listing_type, price, location, image]) => ({ id, title, category, quantity, listing_type, price, location, image_urls: [image], description: 'Ready for collection and reuse or responsible recycling.', condition: 'Good condition', contact_info: 'demo@cleanspot.lk', profiles: { name: 'CleanSpot Community' }, active: true }));
+].map(([id, title, category, quantity, listing_type, price, location, image], index) => ({ id, seller_id: `demo-seller-${index + 1}`, title, category, quantity, listing_type, price, location, image_urls: [image], description: 'Ready for collection and reuse or responsible recycling.', condition: 'Good condition', contact_info: `seller${index + 1}@cleanspot.demo`, profiles: { name: ['Nimali Perera', 'Kasun Silva', 'Ayesha Fernando', 'Dilan Jayawardena', 'Madhavi Senanayake', 'Ruwan Dias'][index] }, active: true }));
 
 function demoStore() {
   const base = createDemoStore();
@@ -31,7 +42,13 @@ function demoStore() {
     const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
     if (!saved) return base;
     const mergeSeeds = (current = [], seeds) => [...current, ...seeds.filter((seed) => !current.some((item) => item.id === seed.id))];
-    return { ...base, ...saved, listings: mergeSeeds(saved.listings, base.listings), rewards: mergeSeeds(saved.rewards, base.rewards), claims: saved.claims || [], reports: saved.reports || [] };
+    const listings = mergeSeeds(saved.listings, base.listings).map((listing, index) => {
+      if (listing.seller_id) return listing;
+      const isCurrentUserListing = listing.profiles?.name === saved.profile?.name;
+      const seed = base.listings.find((item) => item.id === listing.id);
+      return { ...listing, seller_id: isCurrentUserListing ? saved.profile.id : `demo-seller-legacy-${index + 1}`, profiles: isCurrentUserListing ? { name: saved.profile.name } : seed?.profiles || listing.profiles };
+    });
+    return { ...base, ...saved, listings, rewards: mergeSeeds(saved.rewards, base.rewards), claims: saved.claims || [], reports: saved.reports || [] };
   } catch { return base; }
 }
 
@@ -66,7 +83,7 @@ function fileAsDataUrl(file) {
 async function demoApi(path, options = {}) {
   const store = demoStore();
   if (path === '/api/me') return { profile: store.profile, company: null };
-  if (path === '/api/dashboard') return { profile: store.profile, stats: { points: store.profile.points, reports: store.reports.length, cleaned: store.reports.filter((item) => item.status === 'cleaned').length, listings: store.listings.length }, reports: store.reports.slice(0, 5), activity: [], claims: store.claims };
+  if (path === '/api/dashboard') return { profile: store.profile, stats: { points: store.profile.points, reports: store.reports.length, cleaned: store.reports.filter((item) => item.status === 'cleaned').length, listings: store.listings.filter((item) => item.seller_id === store.profile.id).length }, reports: store.reports.slice(0, 5), activity: [], claims: store.claims };
   if (path === '/api/reports/mine') return { reports: store.reports };
   if (path === '/api/reports' && options.method === 'POST') {
     const form = options.body;
@@ -111,7 +128,7 @@ async function demoApi(path, options = {}) {
   if (path === '/api/marketplace' && options.method === 'POST') {
     const form = options.body;
     const image = await fileAsDataUrl(form.get('photos'));
-    const listing = { id: crypto.randomUUID(), title: form.get('title'), description: form.get('description'), category: form.get('category'), quantity: form.get('quantity'), listing_type: form.get('listingType'), condition: form.get('condition'), price: Number(form.get('price')), location: form.get('location'), contact_info: form.get('contactInfo'), image_urls: image ? [image] : [], profiles: { name: store.profile.name }, active: true };
+    const listing = { id: crypto.randomUUID(), seller_id: store.profile.id, title: form.get('title'), description: form.get('description'), category: form.get('category'), quantity: form.get('quantity'), listing_type: form.get('listingType'), condition: form.get('condition'), price: Number(form.get('price')), location: form.get('location'), contact_info: form.get('contactInfo'), image_urls: image ? [image] : [], profiles: { name: store.profile.name }, active: true };
     store.listings.unshift(listing); saveDemo(store); return { listing };
   }
   throw new Error('This presentation action is unavailable.');
@@ -187,6 +204,7 @@ function renderHeader() {
   const header = $('#topbar');
   if (!header) return;
   const signedIn = Boolean(state.session && state.profile);
+  const isLanding = page === 'landing';
   const isCompany = state.profile?.role === 'cleanup_company';
   const isAdmin = state.profile?.role === 'admin';
   const active = (file) => (location.pathname.endsWith(file) ? ' active' : '');
@@ -204,9 +222,9 @@ function renderHeader() {
   const adminLinks = [['dashboard.html', 'Overview'], ['marketplace.html', 'Marketplace']];
   const links = isCompany ? companyLinks : isAdmin ? adminLinks : citizenLinks;
   header.innerHTML = `<div class="site-header">
-    <a class="wordmark brand-identity" href="/index.html" aria-label="CleanSpot home"><span class="brand-symbol"><img src="/assets/cleanspot-logo.png" alt=""></span><strong>CleanSpot</strong></a>
+    <a class="wordmark brand-identity" href="/index.html" aria-label="CleanSpot home"><span class="brand-symbol"><img src="/assets/cleanspot-icon.png" alt=""></span><strong>CleanSpot</strong></a>
     <nav class="nav-links" id="navLinks">
-      ${signedIn ? links.map(([file, label]) => `<a class="nav-link${active(file)}" href="/${file}">${label}</a>`).join('') : '<a class="nav-link" href="/marketplace.html">Marketplace</a>'}
+      ${signedIn ? links.map(([file, label]) => `<a class="nav-link${active(file)}" href="/${file}">${label}</a>`).join('') : isLanding ? '' : '<a class="nav-link" href="/marketplace.html">Marketplace</a>'}
     </nav>
     <div class="nav-actions">
       ${signedIn ? `<a class="nav-link${active('profile.html')}" href="/profile.html">${escapeHtml(state.profile.name.split(' ')[0])}</a><button class="button button-secondary button-small" id="logoutButton">Logout</button>` : '<a class="button button-primary button-small" href="/auth.html?mode=register">Get started</a>'}
@@ -313,13 +331,13 @@ function reportCard(report, options = {}) {
 async function setupAuth() {
   const form = $('#authForm');
   if (!form) return;
-  $('#demoAccess')?.addEventListener('click', () => {
-    const store = createDemoStore();
-    saveDemo(store);
-    window.location.assign('/dashboard.html');
-  });
   if (!state.config?.configured) {
-    setMessage($('#authMessage'), 'Add Supabase keys to .env before using authentication.');
+    setMessage($('#authMessage'), state.config?.loadError ? 'Supabase configuration could not be loaded. Restart the server and refresh this page.' : 'Add Supabase keys to .env before using authentication.');
+    $('#authSubmit').disabled = true;
+    return;
+  }
+  if (state.config.clientUnavailable || !state.client) {
+    setMessage($('#authMessage'), 'Supabase could not load in this browser. Check your connection and refresh the page.');
     $('#authSubmit').disabled = true;
     return;
   }
@@ -328,10 +346,13 @@ async function setupAuth() {
     return;
   }
   const registering = new URLSearchParams(location.search).get('mode') === 'register';
+  form.classList.toggle('is-registering', registering);
   const title = $('#authTitle');
   const subtitle = $('#authSubtitle');
   const submit = $('#authSubmit');
   const switcher = $('#authSwitch');
+  const passwordInput = $('#authPassword');
+  const passwordToggle = $('#togglePassword');
   $('#authNameField').classList.toggle('hidden', !registering);
   $('#roleFields').classList.toggle('hidden', !registering);
   title.textContent = registering ? 'Start a cleaner loop.' : 'Welcome back.';
@@ -339,6 +360,15 @@ async function setupAuth() {
   submit.innerHTML = registering ? 'Create CleanSpot account <i data-lucide="arrow-right"></i>' : 'Sign in <i data-lucide="arrow-right"></i>';
   switcher.innerHTML = registering ? 'Already part of CleanSpot? <a href="/auth.html">Sign in</a>' : 'New to CleanSpot? <a href="/auth.html?mode=register">Create an account</a>';
   refreshIcons();
+
+  passwordToggle?.addEventListener('click', () => {
+    const visible = passwordInput.type === 'password';
+    passwordInput.type = visible ? 'text' : 'password';
+    passwordToggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+    passwordToggle.setAttribute('title', visible ? 'Hide password' : 'Show password');
+    passwordToggle.innerHTML = `<i data-lucide="${visible ? 'eye-off' : 'eye'}"></i>`;
+    refreshIcons();
+  });
 
   const roleFields = $('#companyFields');
   const updateCompanyFields = () => roleFields.classList.toggle('hidden', $('input[name="role"]:checked')?.value !== 'cleanup_company');
@@ -348,7 +378,7 @@ async function setupAuth() {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const email = $('#authEmail').value.trim();
-    const password = $('#authPassword').value;
+    const password = passwordInput.value;
     setMessage($('#authMessage'), '');
     submit.disabled = true;
     try {
@@ -423,6 +453,56 @@ function setupImagePreview(input, target) {
   });
 }
 
+function startReportSubmissionAnimation() {
+  const overlay = $('#reportSubmitOverlay');
+  const title = $('#submissionTitle');
+  const subtitle = $('#submissionSubtitle');
+  const steps = [...document.querySelectorAll('.submission-step')];
+  const confetti = $('#submissionConfetti');
+  if (!overlay || !title || !subtitle) return { finish: async () => {}, fail: () => {} };
+
+  const stages = [
+    ['Checking your request', 'Making sure your report details are ready.'],
+    ['Analyzing priority', 'Estimating how quickly this place needs attention.'],
+    ['Analyzing waste', 'Preparing the cleanup team summary.'],
+  ];
+  let stage = 0;
+  overlay.hidden = false;
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('submission-open');
+  title.textContent = stages[0][0];
+  subtitle.textContent = stages[0][1];
+  steps.forEach((step, index) => step.classList.toggle('is-active', index === 0));
+  const timer = window.setInterval(() => {
+    stage = Math.min(stage + 1, stages.length - 1);
+    title.textContent = stages[stage][0];
+    subtitle.textContent = stages[stage][1];
+    steps.forEach((step, index) => step.classList.toggle('is-active', index === stage));
+  }, 720);
+
+  const close = () => {
+    window.clearInterval(timer);
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('submission-open');
+  };
+  return {
+    finish: async () => {
+      window.clearInterval(timer);
+      title.textContent = 'Your report has been submitted.';
+      subtitle.textContent = "We'll review it and let you know.";
+      steps.forEach((step, index) => step.classList.toggle('is-active', index === steps.length - 1));
+      if (confetti) {
+        confetti.innerHTML = Array.from({ length: 14 }, (_, index) => `<i style="--i:${index}"></i>`).join('');
+        confetti.classList.add('is-celebrating');
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 1250));
+      close();
+    },
+    fail: close,
+  };
+}
+
 async function setupReportForm() {
   const content = $('.app-main');
   if (!requireRole(content, 'citizen')) return;
@@ -454,8 +534,10 @@ async function setupReportForm() {
     submit.disabled = true;
     submit.innerHTML = 'Submitting report... <i data-lucide="loader-circle"></i>';
     refreshIcons();
+    const submissionAnimation = startReportSubmissionAnimation();
     try {
       const data = await api('/api/reports', { method: 'POST', body: new FormData(form) });
+      await submissionAnimation.finish();
       result.innerHTML = `<article class="analysis-result"><p class="eyebrow">${data.duplicate ? 'Report declined as duplicate' : 'Report created'}</p><h2>${data.duplicate ? 'A nearby active report already covers this issue.' : 'Your report is ready for cleanup teams.'}</h2><p>${data.duplicate ? 'The existing active report remains visible to teams, so no work is duplicated.' : 'The photo, location, category, and reporter details have been saved for cleanup review.'}</p><div class="report-actions"><a class="button button-primary button-small" href="/reports.html">View my reports <i data-lucide="arrow-right"></i></a><button class="button button-secondary button-small" type="button" id="newReportButton">Report another place</button></div></article>`;
       form.reset();
       $('#reportPreview').innerHTML = '';
@@ -463,6 +545,7 @@ async function setupReportForm() {
       $('#newReportButton')?.addEventListener('click', () => result.replaceChildren());
       toast(data.duplicate ? 'This report was linked to a nearby active issue.' : 'Report submitted for cleanup review.');
     } catch (error) {
+      submissionAnimation.fail();
       setMessage(message, error.message);
     } finally {
       submit.disabled = false;
@@ -586,9 +669,10 @@ async function renderRewards() {
   try {
     const [rewardsData, claimsData, profileData] = await Promise.all([api('/api/rewards'), api('/api/rewards/claims'), api('/api/me')]);
     state.profile = profileData.profile;
+    const rewards = rewardsData.rewards.map((reward) => reward.name === 'Eco Certificate' ? { ...reward, image_url: '/assets/eco-certificate.png' } : reward);
     content.innerHTML = `<div class="page-heading"><div><p class="eyebrow">Verified impact rewards</p><h1>Rewards Store</h1><p>Spend points earned only after a cleanup team verifies the work.</p></div></div>
       <section class="reward-hero"><div><h2>Keep the cleanup loop moving.</h2><p>Rewards are a thank-you for reports that reached a verified outcome.</p></div><div class="points-total"><i data-lucide="coins"></i><div><small>Available points</small><strong>${state.profile.points}</strong></div></div></section>
-      <section class="reward-grid">${rewardsData.rewards.map((reward) => `<article class="reward-card"><img src="${escapeAttribute(reward.image_url)}" alt="${escapeAttribute(reward.name)}"><div class="reward-card-body"><h2>${escapeHtml(reward.name)}</h2><p>${escapeHtml(reward.description)}</p><div class="reward-card-footer"><span class="reward-cost"><i data-lucide="coins"></i>${reward.points_cost}</span><button class="button button-primary button-small" data-claim-reward="${reward.id}" ${state.profile.points < reward.points_cost || reward.stock <= 0 ? 'disabled' : ''}>${reward.stock <= 0 ? 'Out of stock' : 'Claim'}</button></div></div></article>`).join('')}</section>
+      <section class="reward-grid">${rewards.map((reward) => `<article class="reward-card"><img src="${escapeAttribute(reward.image_url)}" alt="${escapeAttribute(reward.name)}"><div class="reward-card-body"><h2>${escapeHtml(reward.name)}</h2><p>${escapeHtml(reward.description)}</p><div class="reward-card-footer"><span class="reward-cost"><i data-lucide="coins"></i>${reward.points_cost}</span><button class="button button-primary button-small" data-claim-reward="${reward.id}" ${state.profile.points < reward.points_cost || reward.stock <= 0 ? 'disabled' : ''}>${reward.stock <= 0 ? 'Out of stock' : 'Claim'}</button></div></div></article>`).join('')}</section>
       <section class="claimed-section"><div class="panel-heading"><h2>My rewards</h2></div><div class="claim-list">${claimsData.claims.length ? claimsData.claims.map((claim) => `<div class="claim-item"><div><strong>${escapeHtml(claim.rewards.name)}</strong><small>${claim.points_spent} points spent - ${formatDate(claim.created_at)}</small></div><span class="tag">${escapeHtml(displayStatus(claim.status))}</span></div>`).join('') : '<p class="muted">You have not claimed a reward yet.</p>'}</div></section>`;
     $$('[data-claim-reward]', content).forEach((button) => button.addEventListener('click', async () => {
       if (!window.confirm('Claim this reward using your verified CleanSpot points?')) return;
@@ -691,6 +775,8 @@ function setupDialogClose() {
 }
 
 async function boot() {
+  setFavicon();
+  renderHeader();
   if (new URLSearchParams(location.search).get('demo') === '1') saveDemo(createDemoStore());
   const savedDemo = localStorage.getItem(DEMO_KEY) ? demoStore() : null;
   if (savedDemo?.active) {
@@ -702,16 +788,23 @@ async function boot() {
   try {
     if (state.demo) throw new Error('presentation-demo');
     const response = await fetch('/api/public-config', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Public configuration request failed.');
     state.config = await response.json();
-    if (state.config.configured && window.supabase) {
-      state.client = window.supabase.createClient(state.config.url, state.config.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-      await loadIdentity();
+    if (state.config.configured && !window.supabase) {
+      state.config.clientUnavailable = true;
+    } else if (state.config.configured) {
+      try {
+        state.client = window.supabase.createClient(state.config.url, state.config.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+        await loadIdentity();
+      } catch (error) {
+        console.warn('Supabase session initialization failed:', error);
+      }
     }
   } catch (error) {
     if (state.demo) {
       renderHeader();
     } else {
-    state.config = { configured: false };
+      state.config = { configured: false, loadError: true };
     }
   }
   renderHeader();
