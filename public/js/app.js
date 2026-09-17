@@ -204,7 +204,6 @@ function renderHeader() {
   const header = $('#topbar');
   if (!header) return;
   const signedIn = Boolean(state.session && state.profile);
-  const isLanding = page === 'landing';
   const isCompany = state.profile?.role === 'cleanup_company';
   const isAdmin = state.profile?.role === 'admin';
   const active = (file) => (location.pathname.endsWith(file) ? ' active' : '');
@@ -224,7 +223,7 @@ function renderHeader() {
   header.innerHTML = `<div class="site-header">
     <a class="wordmark brand-identity" href="/index.html" aria-label="CleanSpot home"><span class="brand-symbol"><img src="/assets/cleanspot-icon.png" alt=""></span><strong>CleanSpot</strong></a>
     <nav class="nav-links" id="navLinks">
-      ${signedIn ? links.map(([file, label]) => `<a class="nav-link${active(file)}" href="/${file}">${label}</a>`).join('') : isLanding ? '' : '<a class="nav-link" href="/marketplace.html">Marketplace</a>'}
+      ${links.map(([file, label]) => `<a class="nav-link${active(file)}" href="/${file}">${label}</a>`).join('')}
     </nav>
     <div class="nav-actions">
       ${signedIn ? `<a class="nav-link${active('profile.html')}" href="/profile.html">${escapeHtml(state.profile.name.split(' ')[0])}</a><button class="button button-secondary button-small" id="logoutButton">Logout</button>` : '<a class="button button-primary button-small" href="/auth.html?mode=register">Get started</a>'}
@@ -451,6 +450,37 @@ function setupImagePreview(input, target) {
   input.addEventListener('change', () => {
     target.innerHTML = [...input.files].slice(0, 4).map((file) => `<img class="preview-image" src="${URL.createObjectURL(file)}" alt="Selected image preview">`).join('');
   });
+}
+
+function primeAuthForm() {
+  if (page !== 'auth') return;
+  const registering = new URLSearchParams(location.search).get('mode') === 'register';
+  const form = $('#authForm');
+  if (!form) return;
+  form.classList.toggle('is-registering', registering);
+  $('#authNameField')?.classList.toggle('hidden', !registering);
+  $('#roleFields')?.classList.toggle('hidden', !registering);
+  $('#authTitle').textContent = registering ? 'Start a cleaner loop.' : 'Welcome back.';
+  $('#authSubtitle').textContent = registering ? 'Create your account and choose how you will move cleanup forward.' : 'Sign in to follow reports, rewards, and reuse opportunities.';
+  $('#authSubmit').innerHTML = registering ? 'Create CleanSpot account <i data-lucide="arrow-right"></i>' : 'Sign in <i data-lucide="arrow-right"></i>';
+  $('#authSwitch').innerHTML = registering ? 'Already part of CleanSpot? <a href="/auth.html">Sign in</a>' : 'New to CleanSpot? <a href="/auth.html?mode=register">Create an account</a>';
+}
+
+function showRewardCelebration(name) {
+  const overlay = $('#rewardClaimCelebration');
+  const title = $('#rewardCelebrationTitle');
+  const confetti = $('#rewardCelebrationConfetti');
+  if (!overlay) return Promise.resolve();
+  title.textContent = `${name} is yours!`;
+  confetti.innerHTML = Array.from({ length: 18 }, (_, index) => `<i style="--i:${index}"></i>`).join('');
+  overlay.hidden = false;
+  overlay.setAttribute('aria-hidden', 'false');
+  refreshIcons();
+  return new Promise((resolve) => window.setTimeout(() => {
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+    resolve();
+  }, 5000));
 }
 
 function startReportSubmissionAnimation() {
@@ -680,6 +710,8 @@ async function renderRewards() {
       try {
         const result = await api(`/api/rewards/${button.dataset.claimReward}/claim`, { method: 'POST' });
         state.profile.points = result.points;
+        const rewardName = button.closest('.reward-card')?.querySelector('h2')?.textContent || 'Your reward';
+        await showRewardCelebration(rewardName);
         toast('Reward claimed. Your points balance has been updated.');
         renderRewards();
       } catch (error) {
@@ -776,6 +808,7 @@ function setupDialogClose() {
 
 async function boot() {
   setFavicon();
+  primeAuthForm();
   renderHeader();
   if (new URLSearchParams(location.search).get('demo') === '1') saveDemo(createDemoStore());
   const savedDemo = localStorage.getItem(DEMO_KEY) ? demoStore() : null;

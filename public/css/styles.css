@@ -923,6 +923,21 @@ select:focus {
 }
 .report-submit-overlay[hidden] { display: none; }
 .submission-open { overflow: hidden; }
+.reward-celebration { align-items: center; background: color-mix(in srgb, var(--ink) 76%, transparent); display: flex; inset: 0; justify-content: center; padding: 1rem; position: fixed; z-index: 50; }
+.reward-celebration[hidden] { display: none; }
+.reward-celebration-card { animation: submission-card-in 0.35s ease both; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 24px 80px color-mix(in srgb, var(--ink) 28%, transparent); max-width: 390px; overflow: hidden; padding: 2rem 1.75rem 1.6rem; position: relative; text-align: center; width: 100%; }
+.reward-celebration-card > p:not(.eyebrow) { color: var(--muted); margin: 0; }
+.reward-celebration-icon { align-items: center; background: var(--brand-pale); border-radius: 50%; color: var(--brand); display: flex; height: 58px; justify-content: center; margin: 0 auto 1rem; width: 58px; }
+.reward-celebration-icon svg { height: 26px; width: 26px; }
+.reward-celebration-card h2 { font-size: clamp(1.35rem, 4vw, 1.65rem); margin: 0.55rem 0 0.4rem; }
+.reward-celebration-confetti { inset: 0; overflow: hidden; pointer-events: none; position: absolute; }
+.reward-celebration-confetti i { background: var(--brand); height: 8px; left: 50%; opacity: 0; position: absolute; top: 48%; width: 4px; }
+.reward-celebration-confetti i:nth-child(3n) { background: var(--accent); }
+.reward-celebration-confetti i:nth-child(3n + 1) { background: #75c7d9; }
+.reward-celebration-confetti i:nth-child(4n) { height: 5px; width: 8px; }
+.reward-celebration-confetti i { transform: rotate(calc(var(--i) * 29deg)); }
+.reward-celebration-confetti i { animation: reward-confetti-pop 0.95s ease-out calc(var(--i) * 0.025s) both; }
+@keyframes reward-confetti-pop { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--i) * 29deg)) translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--i) * 29deg)) translateY(-125px); } }
 .report-submit-card {
   animation: submission-card-in 0.35s ease both;
   background: var(--surface);
@@ -971,7 +986,7 @@ select:focus {
 @keyframes submission-card-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
 @keyframes submission-orbit { to { transform: rotate(360deg); } }
 @keyframes confetti-pop { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--i) * 29deg)) translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--i) * 29deg)) translateY(-110px); } }
-@media (prefers-reduced-motion: reduce) { .report-submit-card, .submission-orbit span, .submission-confetti.is-celebrating i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .report-submit-card, .reward-celebration-card, .submission-orbit span, .submission-confetti.is-celebrating i, .reward-celebration-confetti i { animation: none; } }
 .location-capture > div {
   align-items: center;
   color: var(--muted);
